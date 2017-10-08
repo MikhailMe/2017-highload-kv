@@ -1,6 +1,8 @@
 package ru.mail.polis;
 
 import org.jetbrains.annotations.NotNull;
+import ru.mail.polis.mikhail.MikhailService;
+import ru.mail.polis.mikhail.MyFileDAO;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,7 +46,6 @@ final class KVServiceFactory {
             throw new IllegalArgumentException("Path is not a directory: " + data);
         }
 
-        // TODO: Implement me
-        throw new UnsupportedOperationException("Implement me!");
+        return new MikhailService(port, new MyFileDAO(data));
     }
 }
