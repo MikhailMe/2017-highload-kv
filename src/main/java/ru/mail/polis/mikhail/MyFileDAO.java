@@ -21,7 +21,8 @@ public class MyFileDAO implements MyDAO {
 
     @NotNull
     @Override
-    public byte[] get(@NotNull final String key) throws NoSuchElementException, IllegalArgumentException, IOException {
+    public byte[] get(@NotNull final String key)
+            throws NoSuchElementException, IllegalArgumentException, IOException {
         final File file = getFile(key);
         final byte[] value = new byte[(int) file.length()];
         try (InputStream is = new FileInputStream(file)) {
@@ -33,7 +34,9 @@ public class MyFileDAO implements MyDAO {
 
     @NotNull
     @Override
-    public void upsert(@NotNull final String key, @NotNull final byte[] value) throws IllegalArgumentException, IOException {
+    public void upsert(@NotNull final String key,
+                       @NotNull final byte[] value)
+            throws IllegalArgumentException, IOException {
         try (OutputStream os = new FileOutputStream(getFile(key))) {
             os.write(value);
         }
@@ -41,7 +44,8 @@ public class MyFileDAO implements MyDAO {
 
     @NotNull
     @Override
-    public void delete(@NotNull final String key) throws IllegalArgumentException, IOException {
+    public void delete(@NotNull final String key)
+            throws IllegalArgumentException, IOException {
         //noinspection ResultOfMethodCallIgnored
         try {
             getFile(key).delete();

@@ -14,4 +14,5 @@ interface MyDAO {
 
     @NotNull
     void delete(@NotNull final String key) throws IllegalArgumentException, IOException;
+
 }
