@@ -25,6 +25,7 @@ final class KVServiceFactory {
      *
      * @param port port to bind HTTP server to
      * @param data local disk folder to persist the data to
+     * @param topology a list of all cluster endpoints {@code http://<host>:<port>} (including this one)
      * @return a storage instance
      */
     @NotNull
