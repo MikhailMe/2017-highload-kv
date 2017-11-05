@@ -133,6 +133,6 @@ public class MikhailService implements KVService {
     @Override
     public void stop() {
         //   даёт время запросам, которые начали обработку, завершить обработку
-        this.server.stop(1);
+        this.server.stop(0);
     }
 }

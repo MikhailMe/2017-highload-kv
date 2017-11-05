@@ -6,6 +6,7 @@ import ru.mail.polis.mikhail.MyFileDAO;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * Constructs {@link KVService} instances.
@@ -29,7 +30,8 @@ final class KVServiceFactory {
     @NotNull
     static KVService create(
             final int port,
-            @NotNull final File data) throws IOException {
+            @NotNull final File data,
+            @NotNull final Set<String> topology) throws IOException {
         if (Runtime.getRuntime().maxMemory() > MAX_HEAP) {
             throw new IllegalStateException("The heap is too big. Consider setting Xmx.");
         }
