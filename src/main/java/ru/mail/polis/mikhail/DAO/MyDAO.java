@@ -1,11 +1,11 @@
-package ru.mail.polis.mikhail;
+package ru.mail.polis.mikhail.DAO;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;
 
-interface MyDAO {
+public interface MyDAO {
     @NotNull
     byte[] get(@NotNull final String key) throws NoSuchElementException, IllegalArgumentException, IOException;
 
@@ -14,5 +14,4 @@ interface MyDAO {
 
     @NotNull
     void delete(@NotNull final String key) throws IllegalArgumentException, IOException;
-
 }

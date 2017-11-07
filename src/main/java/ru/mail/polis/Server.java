@@ -17,11 +17,16 @@ public final class Server {
     }
 
     public static void main(String[] args) throws IOException {
+
         // Temporary storage in the file system
         final File data = Files.createTempDirectory();
 
         // Start the storage
-        final KVService storage = KVServiceFactory.create(PORT, data, Collections.singleton("http://localhost:" + PORT));
+        final KVService storage =
+                KVServiceFactory.create(
+                        PORT,
+                        data,
+                        Collections.singleton("http://localhost:" + PORT));
         storage.start();
         Runtime.getRuntime().addShutdownHook(new Thread(storage::stop));
     }

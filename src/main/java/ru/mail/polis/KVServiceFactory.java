@@ -2,7 +2,8 @@ package ru.mail.polis;
 
 import org.jetbrains.annotations.NotNull;
 import ru.mail.polis.mikhail.MikhailService;
-import ru.mail.polis.mikhail.MyFileDAO;
+import ru.mail.polis.mikhail.DAO.MyFileDAO;
+import ru.mail.polis.mikhail.Topology.MikhailTopology;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +31,7 @@ final class KVServiceFactory {
      */
     @NotNull
     static KVService create(
-            final int port,
+            @NotNull final int port,
             @NotNull final File data,
             @NotNull final Set<String> topology) throws IOException {
         if (Runtime.getRuntime().maxMemory() > MAX_HEAP) {
@@ -49,6 +50,6 @@ final class KVServiceFactory {
             throw new IllegalArgumentException("Path is not a directory: " + data);
         }
 
-        return new MikhailService(port, new MyFileDAO(data));
+        return new MikhailService(port, data, topology);
     }
 }

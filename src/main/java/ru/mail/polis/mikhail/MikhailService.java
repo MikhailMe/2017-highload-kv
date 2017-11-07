@@ -4,10 +4,17 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.jetbrains.annotations.NotNull;
 import ru.mail.polis.KVService;
+import ru.mail.polis.mikhail.DAO.MyDAO;
+import ru.mail.polis.mikhail.DAO.MyFileDAO;
+import ru.mail.polis.mikhail.Topology.MikhailTopology;
+import ru.mail.polis.mikhail.Topology.Topology;
+import ru.mail.polis.mikhail.handlers.StatusHandler;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 public class MikhailService implements KVService {
 
@@ -15,42 +22,53 @@ public class MikhailService implements KVService {
     private final HttpServer server;
     @NotNull
     private final MyDAO dao;
+    @NotNull
+    private final Topology topology;
 
-    private final static String PREFIX = "id=";
-    private final static String STATUS = "/v0/status";
-    private final static String ENTITY = "/v0/entity";
+    private final static String ID = "id=";
+    private final static String ADDRESS = "address=";
+    private final static String REPLICAS = "replicas=";
+    private final static String DELIMETER = "/";
+    private final static String PATH_STATUS = "/v0/status";
+    private final static String PATH_ENTITY = "/v0/entity";
     private final static String GET_REQUEST = "GET";
     private final static String PUT_REQUEST = "PUT";
     private final static String DELETE_REQUEST = "DELETE";
 
 
-    public MikhailService(int port,
-                          @NotNull final MyDAO dao)
+    public MikhailService(@NotNull int port,
+                          @NotNull final File data,
+                          @NotNull final Set<String> topology)
             throws IOException {
         // создали сервер на нужном порту
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
         // задаём дао
-        this.dao = dao;
+        this.dao = new MyFileDAO(data);
+        // задаём топологию
+        this.topology = new MikhailTopology(topology);
 
-        this.server.createContext(STATUS, http -> {
+
+        this.server.createContext(PATH_STATUS, new StatusHandler());
+
+        /*this.server.createContext(PATH_STATUS, http -> {
             if (GET_REQUEST.equals(http.getRequestMethod())) {
                 final String response = "ONLINE";
-                http.sendResponseHeaders(Code.OK.getResponseCode(), response.length());
+                http.sendResponseHeaders(Code.CODE_OK.getCode(), response.length());
                 http.getResponseBody().write(response.getBytes());
             } else {
-                http.sendResponseHeaders(Code.NOT_ALLOWED.getResponseCode(), 0);
+                http.sendResponseHeaders(Code.CODE_NOT_ALLOWED.getCode(), 0);
             }
             http.close();
-        });
+        });*/
 
         // вешаем обработчик на сервер
-        this.server.createContext(ENTITY, http -> {
+        this.server.createContext(PATH_ENTITY, http -> {
             // достали id
             String id;
             try {
                 id = extractId(http.getRequestURI().getQuery());
             } catch (IllegalArgumentException e) {
-                http.sendResponseHeaders(Code.BAD_REQUEST.getResponseCode(), 0);
+                http.sendResponseHeaders(Code.CODE_BAD_REQUEST.getCode(), 0);
                 http.close();
                 return;
             }
@@ -66,7 +84,7 @@ public class MikhailService implements KVService {
                     put(http, id);
                     break;
                 default:
-                    http.sendResponseHeaders(Code.SERVICE_UNAVAILABLE.getResponseCode(), 0);
+                    http.sendResponseHeaders(Code.CODE_SERVICE_UNAVAILABLE.getCode(), 0);
                     break;
             }
             http.close();
@@ -76,10 +94,10 @@ public class MikhailService implements KVService {
     // достаём id
     @NotNull
     private static String extractId(@NotNull final String query)
-        throws IllegalArgumentException{
-        if (!query.startsWith(PREFIX))
+            throws IllegalArgumentException{
+        if (!query.startsWith(ID))
             throw new IllegalArgumentException("wrong string");
-        String id = query.substring(PREFIX.length());
+        String id = query.substring(ID.length());
         if (id.isEmpty())
             throw new IllegalArgumentException("id is empty");
         return id;
@@ -90,10 +108,10 @@ public class MikhailService implements KVService {
             throws IOException {
         try {
             final byte[] getValue = dao.get(id);
-            http.sendResponseHeaders(Code.OK.getResponseCode(), getValue.length);
+            http.sendResponseHeaders(Code.CODE_OK.getCode(), getValue.length);
             http.getResponseBody().write(getValue);
         } catch (IOException e) {
-            http.sendResponseHeaders(Code.NOT_FOUND.getResponseCode(), 0);
+            http.sendResponseHeaders(Code.CODE_NOT_FOUND.getCode(), 0);
             http.close();
         }
     }
@@ -107,13 +125,13 @@ public class MikhailService implements KVService {
             if (contentLength != 0 && http.getRequestBody().read(putValue) != putValue.length)
                 throw new IOException("can't read file at once");
             dao.upsert(id, putValue);
-            http.sendResponseHeaders(Code.CREATED.getResponseCode(), contentLength);
+            http.sendResponseHeaders(Code.CODE_CREATED.getCode(), contentLength);
             http.getResponseBody().write(putValue);
         } catch (IllegalArgumentException e) {
-            http.sendResponseHeaders(Code.BAD_REQUEST.getResponseCode(), 0);
+            http.sendResponseHeaders(Code.CODE_BAD_REQUEST.getCode(), 0);
             http.close();
         } catch (NoSuchElementException e) {
-            http.sendResponseHeaders(Code.NOT_FOUND.getResponseCode(), 0);
+            http.sendResponseHeaders(Code.CODE_NOT_FOUND.getCode(), 0);
             http.close();
         }
     }
@@ -122,7 +140,7 @@ public class MikhailService implements KVService {
                         @NotNull String id)
             throws IOException{
         dao.delete(id);
-        http.sendResponseHeaders(Code.ACCEPTED.getResponseCode(), 0);
+        http.sendResponseHeaders(Code.CODE_ACCEPTED.getCode(), 0);
     }
 
     @Override
