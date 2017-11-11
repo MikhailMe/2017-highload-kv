@@ -47,19 +47,7 @@ public class MikhailService implements KVService {
         // задаём топологию
         this.topology = new MikhailTopology(topology);
 
-
         this.server.createContext(PATH_STATUS, new StatusHandler());
-
-        /*this.server.createContext(PATH_STATUS, http -> {
-            if (GET_REQUEST.equals(http.getRequestMethod())) {
-                final String response = "ONLINE";
-                http.sendResponseHeaders(Code.CODE_OK.getCode(), response.length());
-                http.getResponseBody().write(response.getBytes());
-            } else {
-                http.sendResponseHeaders(Code.CODE_NOT_ALLOWED.getCode(), 0);
-            }
-            http.close();
-        });*/
 
         // вешаем обработчик на сервер
         this.server.createContext(PATH_ENTITY, http -> {

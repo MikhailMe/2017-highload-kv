@@ -12,6 +12,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+<<<<<<< HEAD
+=======
+import java.util.concurrent.TimeUnit;
+>>>>>>> 8bcf7b111333f1f9f2b52c7ab7a425c955e0edc1
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -23,7 +27,11 @@ import static org.junit.Assert.assertEquals;
  */
 public class ThreeNodeTest extends ClusterTestBase {
     @Rule
+<<<<<<< HEAD
     public final Timeout globalTimeout = Timeout.seconds(3);
+=======
+    public final Timeout globalTimeout = Timeout.seconds(10);
+>>>>>>> 8bcf7b111333f1f9f2b52c7ab7a425c955e0edc1
     private int port0;
     private int port1;
     private int port2;
@@ -126,6 +134,12 @@ public class ThreeNodeTest extends ClusterTestBase {
         assertEquals(200, response.getStatusLine().getStatusCode());
         assertArrayEquals(value1, payloadOf(response));
 
+<<<<<<< HEAD
+=======
+        // Help implementors with second precision for conflict resolution
+        Thread.sleep(TimeUnit.SECONDS.toMillis(1));
+
+>>>>>>> 8bcf7b111333f1f9f2b52c7ab7a425c955e0edc1
         // Insert 2
         assertEquals(201, upsert(2, key, value2, 2, 3).getStatusLine().getStatusCode());
 
