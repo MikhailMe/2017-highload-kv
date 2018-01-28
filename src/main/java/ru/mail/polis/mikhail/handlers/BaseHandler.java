@@ -11,10 +11,10 @@ import java.nio.file.Files;
 
 public class BaseHandler implements HttpHandler {
 
-    private final static String ID = "id=";
-    private final static String ADDRESS = "address=";
-    private final static String REPLICAS = "replicas=";
-    private final static String DELIMETER = "/";
+    private static final String AND = "&";
+    private static final String ID = "id=";
+    private static final String DELIMITER = "/";
+    private static final String ADDRESS = "address=";
 
 
     protected void sendHttpResponse(HttpExchange http, int code, File file) throws IOException {
@@ -24,7 +24,7 @@ public class BaseHandler implements HttpHandler {
         outputStream.close();
     }
 
-    protected void sendHttpResponse(HttpExchange http, int code, String response) throws IOException {
+    void sendHttpResponse(HttpExchange http, int code, String response) throws IOException {
         http.sendResponseHeaders(code, response.getBytes().length);
         http.getResponseBody().write(response.getBytes());
         http.getResponseBody().close();
@@ -38,7 +38,7 @@ public class BaseHandler implements HttpHandler {
     @NotNull
     private String extractId(@NotNull final String query)
             throws IllegalArgumentException {
-        for (String subQuery : query.split("&")) {
+        for (String subQuery : query.split(AND)) {
             if (subQuery.startsWith(ID))
                 if (subQuery.length() == ID.length())
                     throw new IllegalArgumentException();

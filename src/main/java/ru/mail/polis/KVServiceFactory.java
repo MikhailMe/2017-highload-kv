@@ -29,7 +29,7 @@ final class KVServiceFactory {
      */
     @NotNull
     static KVService create(
-            @NotNull final int port,
+            final int port,
             @NotNull final File data,
             @NotNull final Set<String> topology) throws IOException {
         if (Runtime.getRuntime().maxMemory() > MAX_HEAP) {

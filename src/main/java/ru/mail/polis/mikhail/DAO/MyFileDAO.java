@@ -3,32 +3,43 @@ package ru.mail.polis.mikhail.DAO;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 public class MyFileDAO implements MyDAO {
 
     @NotNull
     private final File directory;
+    @NotNull
+    private final Map<String, byte[]> cache;
 
     public MyFileDAO(@NotNull final File dir) {
         this.directory = dir;
+        cache = new HashMap<>();
     }
 
     @NotNull
-    private File getFile(@NotNull final String key) {
-        return new File(directory, key);
+    private Path getPath(@NotNull final String key) {
+        return Paths.get(directory.getName(), key);
     }
 
     @NotNull
     @Override
     public byte[] get(@NotNull final String key)
             throws NoSuchElementException, IllegalArgumentException, IOException {
-        final File file = getFile(key);
-        final byte[] value = new byte[(int) file.length()];
-        try (InputStream is = new FileInputStream(file)) {
-            if (is.read(value) != file.length())
-                throw new IOException("can't read file");
+        if (cache.containsKey(key)) {
+            return cache.get(key);
         }
+        Path path = getPath(key);
+        if (!Files.exists(path)) {
+            throw new NoSuchElementException("File doesn't exist");
+        }
+        final byte[] value = Files.readAllBytes(getPath(key));
+        cache.put(key, value);
         return value;
     }
 
@@ -37,20 +48,15 @@ public class MyFileDAO implements MyDAO {
     public void upsert(@NotNull final String key,
                        @NotNull final byte[] value)
             throws IllegalArgumentException, IOException {
-        try (OutputStream os = new FileOutputStream(getFile(key))) {
-            os.write(value);
-        }
+        cache.remove(key);
+        Files.write(getPath(key), value);
     }
 
     @NotNull
     @Override
     public void delete(@NotNull final String key)
             throws IllegalArgumentException, IOException {
-        //noinspection ResultOfMethodCallIgnored
-        try {
-            getFile(key).delete();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        cache.remove(key);
+        Files.deleteIfExists(getPath(key));
     }
 }
