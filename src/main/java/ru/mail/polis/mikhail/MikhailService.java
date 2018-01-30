@@ -3,8 +3,10 @@ package ru.mail.polis.mikhail;
 import com.sun.net.httpserver.HttpServer;
 import org.jetbrains.annotations.NotNull;
 import ru.mail.polis.KVService;
+import ru.mail.polis.mikhail.DAO.MyDAO;
 import ru.mail.polis.mikhail.DAO.MyFileDAO;
-import ru.mail.polis.mikhail.handlers.RequestHandler;
+import ru.mail.polis.mikhail.handlers.EntityHandler;
+import ru.mail.polis.mikhail.handlers.InnerHandler;
 import ru.mail.polis.mikhail.handlers.StatusHandler;
 
 import java.io.File;
@@ -20,14 +22,16 @@ public class MikhailService implements KVService {
     private final static String PATH_INNER = "/v0/inner";
     private final static String PATH_STATUS = "/v0/status";
     private final static String PATH_ENTITY = "/v0/entity";
-    private final static String PATH_SERVER = "http://localhost";
 
-    public MikhailService(int port, @NotNull final File data, @NotNull final Set<String> topology)
+    public MikhailService(final int port,
+                          @NotNull final File data,
+                          @NotNull final Set<String> topology)
             throws IOException {
+        MyDAO dao = new MyFileDAO(data);
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
-        this.server.createContext(PATH_STATUS, new StatusHandler());
-        //this.server.createContext(PATH_INNER, new InnerHandler());
-        this.server.createContext(PATH_ENTITY, new RequestHandler(new MyFileDAO(data), topology));
+        this.server.createContext(PATH_STATUS, new StatusHandler(dao, topology));
+        this.server.createContext(PATH_INNER, new InnerHandler(dao, topology));
+        this.server.createContext(PATH_ENTITY, new EntityHandler(dao, topology));
     }
 
     @Override

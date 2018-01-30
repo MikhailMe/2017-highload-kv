@@ -1,4 +1,4 @@
-package ru.mail.polis.mikhail;
+package ru.mail.polis.mikhail.Helpers;
 
 public class Query {
 

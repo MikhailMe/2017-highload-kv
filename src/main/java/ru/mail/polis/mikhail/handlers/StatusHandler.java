@@ -1,12 +1,19 @@
 package ru.mail.polis.mikhail.handlers;
 
 import com.sun.net.httpserver.HttpExchange;
-import ru.mail.polis.mikhail.Code;
-import ru.mail.polis.mikhail.Message;
+import org.jetbrains.annotations.NotNull;
+import ru.mail.polis.mikhail.Helpers.Code;
+import ru.mail.polis.mikhail.DAO.MyDAO;
+import ru.mail.polis.mikhail.Helpers.Message;
 
 import java.io.IOException;
+import java.util.Set;
 
-public class StatusHandler extends BaseHandler{
+public class StatusHandler extends BaseHandler {
+
+    public StatusHandler(@NotNull MyDAO dao, @NotNull Set<String> topology) {
+        super(dao, topology);
+    }
 
     @Override
     public void handle(HttpExchange http) throws IOException {
