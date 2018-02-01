@@ -25,7 +25,7 @@ public class MyFileDAO implements MyDAO {
 
     @NotNull
     private Path getPath(@NotNull final String key) {
-        return Paths.get(directory.getName(), key);
+        return Paths.get(directory.getPath(), key);
     }
 
     @NotNull
@@ -47,11 +47,11 @@ public class MyFileDAO implements MyDAO {
     @Override
     public void upsert(@NotNull final String key,
                        @NotNull final byte[] value)
-            throws IllegalArgumentException {
+            throws IllegalArgumentException, NoSuchElementException {
         cache.remove(key);
         try {
             Files.write(getPath(key), value);
-        } catch (IOException e) {
+        } catch (IOException | NoSuchElementException e) {
             e.printStackTrace();
         }
     }
