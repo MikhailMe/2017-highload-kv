@@ -2,11 +2,8 @@ package ru.mail.polis.mikhail.handlers;
 
 import com.sun.net.httpserver.HttpExchange;
 import org.jetbrains.annotations.NotNull;
-import ru.mail.polis.mikhail.Helpers.Code;
+import ru.mail.polis.mikhail.Helpers.*;
 import ru.mail.polis.mikhail.DAO.MyDAO;
-import ru.mail.polis.mikhail.Helpers.Message;
-import ru.mail.polis.mikhail.Helpers.Parser;
-import ru.mail.polis.mikhail.Helpers.Query;
 
 import java.io.IOException;
 import java.util.NoSuchElementException;
@@ -21,66 +18,77 @@ public class InnerHandler extends BaseHandler implements HttpMethods {
     @Override
     public void handle(HttpExchange http) throws IOException {
         try {
+            Response response;
             Query query = Parser.getQuery(http.getRequestURI().getQuery(), topology);
             switch (http.getRequestMethod()) {
                 case GET_REQUEST:
-                    get(http, query);
+                    response = get(http, query);
                     break;
                 case PUT_REQUEST:
                     final byte[] value = getByteArray(http.getRequestBody());
-                    put(http, query, value);
+                    response = put(http, query, value);
                     break;
                 case DELETE_REQUEST:
-                    delete(http, query);
+                    response = delete(http, query);
                     break;
                 default:
-                    sendHttpResponse(http, Code.CODE_NOT_ALLOWED.getCode(), Message.MES_NOT_ALLOWED.toString());
+                    response = new Response(Code.CODE_NOT_ALLOWED.getCode(), Message.MES_NOT_ALLOWED.toString());
                     break;
             }
+            sendHttpResponse(http, response);
         } catch (IllegalArgumentException e) {
             sendHttpResponse(http, Code.CODE_BAD_REQUEST.getCode(), e.getMessage());
         }
     }
 
+    @NotNull
     @Override
-    public void get(@NotNull HttpExchange http,
-                    @NotNull Query query)
+    public Response get(@NotNull HttpExchange http,
+                        @NotNull Query query)
             throws IOException {
         try {
             String id = query.getId();
             final byte[] getValue = dao.get(id);
-            sendHttpResponse(http, Code.CODE_OK.getCode(), getValue);
+            code = Code.CODE_OK.getCode();
+            return new Response(code, getValue);
         } catch (IllegalArgumentException e) {
-            sendHttpResponse(http, Code.CODE_BAD_REQUEST.getCode(), e.getMessage());
+            code = Code.CODE_BAD_REQUEST.getCode();
+            return new Response(code, e.getMessage());
         } catch (NoSuchElementException e) {
-            sendHttpResponse(http, Code.CODE_NOT_FOUND.getCode(), e.getMessage());
+            code = Code.CODE_NOT_FOUND.getCode();
+            return new Response(code, e.getMessage());
         }
     }
 
+    @NotNull
     @Override
-    public void put(@NotNull HttpExchange http,
-                    @NotNull Query query,
-                    @NotNull byte[] value)
-            throws IOException {
+    public Response put(@NotNull HttpExchange http,
+                        @NotNull Query query,
+                        @NotNull byte[] value) {
         try {
             String id = query.getId();
             dao.upsert(id, value);
-            sendHttpResponse(http, Code.CODE_CREATED.getCode(), Message.MES_CREATED.toString());
+            code = Code.CODE_CREATED.getCode();
+            return new Response(code);
         } catch (IOException | IllegalArgumentException e) {
-            sendHttpResponse(http, Code.CODE_BAD_REQUEST.getCode(), e.getMessage());
+            code = Code.CODE_BAD_REQUEST.getCode();
+            return new Response(code, e.getMessage());
         }
     }
 
+    @NotNull
     @Override
-    public void delete(@NotNull HttpExchange http,
-                       @NotNull Query query)
+    public Response delete(@NotNull HttpExchange http,
+                           @NotNull Query query)
             throws IOException {
         try {
             String id = query.getId();
             dao.delete(id);
-            sendHttpResponse(http, Code.CODE_ACCEPTED.getCode(), Message.MES_ACCEPTED.toString());
+            code = Code.CODE_ACCEPTED.getCode();
+            return new Response(code);
         } catch (IllegalArgumentException e) {
-            sendHttpResponse(http, Code.CODE_BAD_REQUEST.getCode(), e.getMessage());
+            code = Code.CODE_BAD_REQUEST.getCode();
+            return new Response(code, e.getMessage());
         }
     }
 }

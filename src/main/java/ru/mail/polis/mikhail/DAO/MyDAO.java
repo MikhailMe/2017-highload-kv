@@ -9,9 +9,7 @@ public interface MyDAO {
     @NotNull
     byte[] get(@NotNull final String key) throws NoSuchElementException, IllegalArgumentException, IOException;
 
-    @NotNull
     void upsert(@NotNull final String key, @NotNull final byte[] value) throws IllegalArgumentException, IOException;
 
-    @NotNull
     void delete(@NotNull final String key) throws IllegalArgumentException, IOException;
 }

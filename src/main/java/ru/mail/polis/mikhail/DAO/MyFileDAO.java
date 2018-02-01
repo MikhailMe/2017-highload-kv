@@ -2,7 +2,8 @@ package ru.mail.polis.mikhail.DAO;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,20 +44,26 @@ public class MyFileDAO implements MyDAO {
         return value;
     }
 
-    @NotNull
     @Override
     public void upsert(@NotNull final String key,
                        @NotNull final byte[] value)
-            throws IllegalArgumentException, IOException {
+            throws IllegalArgumentException {
         cache.remove(key);
-        Files.write(getPath(key), value);
+        try {
+            Files.write(getPath(key), value);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    @NotNull
     @Override
     public void delete(@NotNull final String key)
-            throws IllegalArgumentException, IOException {
+            throws IllegalArgumentException {
         cache.remove(key);
-        Files.deleteIfExists(getPath(key));
+        try {
+            Files.deleteIfExists(getPath(key));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

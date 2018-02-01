@@ -38,7 +38,7 @@ final class Files {
     static void recursiveDelete(@NotNull final File path) throws IOException {
         java.nio.file.Files.walkFileTree(
                 path.toPath(),
-                new SimpleFileVisitor<Path>() {
+                new SimpleFileVisitor<>() {
                     private void remove(@NotNull final Path file) throws IOException {
                         if (!file.toFile().delete()) {
                             throw new IOException("Can't delete " + file);

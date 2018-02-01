@@ -4,24 +4,20 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.jetbrains.annotations.NotNull;
 import ru.mail.polis.mikhail.DAO.MyDAO;
+import ru.mail.polis.mikhail.Helpers.Response;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 public class BaseHandler implements HttpHandler {
 
-    private static final String AND = "&";
-    private static final String ID = "id=";
-    private static final String DELIMITER = "/";
-    private static final String ADDRESS = "address=";
-
     final static String GET_REQUEST = "GET";
     final static String PUT_REQUEST = "PUT";
     final static String DELETE_REQUEST = "DELETE";
 
+    int code;
     final MyDAO dao;
     final Set<String> topology;
 
@@ -30,36 +26,29 @@ public class BaseHandler implements HttpHandler {
         this.topology = topology;
     }
 
-    void sendHttpResponse(@NotNull HttpExchange http, int code, File file) throws IOException {
-        http.sendResponseHeaders(code, file.length());
-        OutputStream outputStream = http.getResponseBody();
-        Files.copy(file.toPath(), outputStream);
-        outputStream.close();
-    }
-
     void sendHttpResponse(@NotNull HttpExchange http, int code, String response) throws IOException {
         http.sendResponseHeaders(code, response.getBytes().length);
         http.getResponseBody().write(response.getBytes());
         http.getResponseBody().close();
+        http.close();
     }
 
     void sendHttpResponse(@NotNull HttpExchange http, int code, byte[] response) throws IOException {
         http.sendResponseHeaders(code, response.length);
         http.getResponseBody().write(response);
         http.getResponseBody().close();
+        http.close();
     }
 
-    @NotNull
-    String extractId(@NotNull final String query) throws IllegalArgumentException {
-        for (String subQuery : query.split(AND)) {
-            if (subQuery.startsWith(ID)) {
-                if (subQuery.length() == ID.length()) {
-                    throw new IllegalArgumentException();
-                }
-            }
-            return subQuery.substring(ID.length());
+    void sendHttpResponse(@NotNull HttpExchange http, Response response) throws IOException {
+        int code = response.getCode();
+        byte[] value = response.getValue();
+        if (response.hasValue()) {
+            sendHttpResponse(http, code, new String(value));
+        } else {
+            http.sendResponseHeaders(code, 0);
         }
-        throw new IllegalArgumentException();
+        http.close();
     }
 
     @NotNull

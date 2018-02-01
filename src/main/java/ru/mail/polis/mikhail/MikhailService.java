@@ -28,10 +28,11 @@ public class MikhailService implements KVService {
                           @NotNull final Set<String> topology)
             throws IOException {
         MyDAO dao = new MyFileDAO(data);
+        InnerHandler innerHandler = new InnerHandler(dao, topology);
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
+        this.server.createContext(PATH_INNER, innerHandler);
         this.server.createContext(PATH_STATUS, new StatusHandler(dao, topology));
-        this.server.createContext(PATH_INNER, new InnerHandler(dao, topology));
-        this.server.createContext(PATH_ENTITY, new EntityHandler(dao, topology));
+        this.server.createContext(PATH_ENTITY, new EntityHandler(dao, topology, innerHandler, port));
     }
 
     @Override

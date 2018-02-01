@@ -8,7 +8,7 @@ public enum Code {
     CODE_BAD_REQUEST(400),
     CODE_NOT_FOUND(404),
     CODE_NOT_ALLOWED(405),
-    CODE_SERVICE_UNAVAILABLE(503),
+    CODE_SERVER_ERROR(500),
     CODE_NOT_ENOUGH_REPLICAS(504);
 
     private int responseCode;
