@@ -8,8 +8,8 @@ import ru.mail.polis.mikhail.Helpers.Response;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 public class BaseHandler implements HttpHandler {
 
@@ -19,35 +19,23 @@ public class BaseHandler implements HttpHandler {
 
     int code;
     final MyDAO dao;
-    final Set<String> topology;
+    final List<String> topology;
 
-    BaseHandler(@NotNull final MyDAO dao, @NotNull final Set<String> topology) {
+    BaseHandler(@NotNull final MyDAO dao, @NotNull final List<String> topology) {
         this.dao = dao;
         this.topology = topology;
-    }
-
-    void sendHttpResponse(@NotNull HttpExchange http, int code, String response) throws IOException {
-        http.sendResponseHeaders(code, response.getBytes().length);
-        http.getResponseBody().write(response.getBytes());
-        http.getResponseBody().close();
-        http.close();
-    }
-
-    void sendHttpResponse(@NotNull HttpExchange http, int code, byte[] response) throws IOException {
-        http.sendResponseHeaders(code, response.length);
-        http.getResponseBody().write(response);
-        http.getResponseBody().close();
-        http.close();
     }
 
     void sendHttpResponse(@NotNull HttpExchange http, Response response) throws IOException {
         int code = response.getCode();
         byte[] value = response.getValue();
         if (response.hasValue()) {
-            sendHttpResponse(http, code, new String(value));
+            http.sendResponseHeaders(code, value.length);
+            http.getResponseBody().write(response.getValue());
         } else {
             http.sendResponseHeaders(code, 0);
         }
+        http.getResponseBody().close();
         http.close();
     }
 
@@ -55,22 +43,21 @@ public class BaseHandler implements HttpHandler {
     List<String> getNodesById(@NotNull final String id, int from) {
         List<String> nodes = new ArrayList<>();
         int hash = Math.abs(id.hashCode());
-        List<String> temp = new ArrayList<>(topology);
         for (int i = 0; i < from; i++) {
-            int idx = (hash + i) % temp.size();
-            nodes.add(temp.get(idx));
+            int index = (hash + i) % topology.size();
+            nodes.add(topology.get(index));
         }
         return nodes;
     }
 
-    byte[] getByteArray(@NotNull InputStream inputStream) throws IOException {
-        int size = 1024;
+    byte[] getByteArray(@NotNull InputStream is) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[size];
-            for (int len; (len = inputStream.read(buffer, 0, size)) != -1; ) {
+            byte[] buffer = new byte[1024];
+            for (int len; (len = is.read(buffer, 0, 1024)) != -1; ) {
                 baos.write(buffer, 0, len);
             }
             baos.flush();
+            System.out.println(baos.size());
             return baos.toByteArray();
         }
     }

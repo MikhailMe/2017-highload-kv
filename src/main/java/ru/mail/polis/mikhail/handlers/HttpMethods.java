@@ -10,12 +10,12 @@ import java.io.IOException;
 public interface HttpMethods {
 
     @NotNull
-    Response get(@NotNull final HttpExchange http, @NotNull final Query query) throws IOException;
+    Response get(@NotNull final Query query) throws IOException;
 
     @NotNull
-    Response put(@NotNull final HttpExchange http, @NotNull final Query query, @NotNull final byte[] value) throws IOException;
+    Response put(@NotNull final Query query, @NotNull final byte[] value) throws IOException;
 
     @NotNull
-    Response delete(@NotNull final HttpExchange http, @NotNull final Query query) throws IOException;
+    Response delete(@NotNull final Query query) throws IOException;
 
 }

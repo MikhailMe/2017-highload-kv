@@ -12,6 +12,7 @@ import ru.mail.polis.mikhail.handlers.StatusHandler;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Set;
 
 public class MikhailService implements KVService {
@@ -28,11 +29,11 @@ public class MikhailService implements KVService {
                           @NotNull final Set<String> topology)
             throws IOException {
         MyDAO dao = new MyFileDAO(data);
-        InnerHandler innerHandler = new InnerHandler(dao, topology);
+        InnerHandler innerHandler = new InnerHandler(dao, new ArrayList<>(topology));
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
         this.server.createContext(PATH_INNER, innerHandler);
-        this.server.createContext(PATH_STATUS, new StatusHandler(dao, topology));
-        this.server.createContext(PATH_ENTITY, new EntityHandler(dao, topology, innerHandler, port));
+        this.server.createContext(PATH_STATUS, new StatusHandler(dao, new ArrayList<>(topology)));
+        this.server.createContext(PATH_ENTITY, new EntityHandler(port, dao, new ArrayList<>(topology), innerHandler));
     }
 
     @Override

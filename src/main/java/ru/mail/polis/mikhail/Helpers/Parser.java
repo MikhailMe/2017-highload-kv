@@ -5,8 +5,8 @@ import org.jetbrains.annotations.NotNull;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class Parser {
 
@@ -24,7 +24,7 @@ public class Parser {
         cache = new HashMap<>();
     }
 
-    public static Query getQuery(@NotNull String key, @NotNull Set<String> topology) {
+    public static Query getQuery(@NotNull String key, @NotNull List<String> topology) {
         if (cache.containsKey(key)) {
             return cache.get(key);
         }

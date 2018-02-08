@@ -2,8 +2,7 @@ package ru.mail.polis.mikhail.DAO;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -18,13 +17,16 @@ public class MyFileDAO implements MyDAO {
     @NotNull
     private final Map<String, byte[]> cache;
 
-    public MyFileDAO(@NotNull final File dir) {
-        this.directory = dir;
+    public MyFileDAO(@NotNull final File directory) {
+        this.directory = directory;
         cache = new HashMap<>();
     }
 
     @NotNull
     private Path getPath(@NotNull final String key) {
+        if (key.isEmpty()) {
+            throw new IllegalArgumentException("key is empty");
+        }
         return Paths.get(directory.getPath(), key);
     }
 
@@ -47,23 +49,15 @@ public class MyFileDAO implements MyDAO {
     @Override
     public void upsert(@NotNull final String key,
                        @NotNull final byte[] value)
-            throws IllegalArgumentException, NoSuchElementException {
+            throws IllegalArgumentException, NoSuchElementException, IOException {
         cache.remove(key);
-        try {
-            Files.write(getPath(key), value);
-        } catch (IOException | NoSuchElementException e) {
-            e.printStackTrace();
-        }
+        Files.write(getPath(key), value);
     }
 
     @Override
     public void delete(@NotNull final String key)
-            throws IllegalArgumentException {
+            throws IllegalArgumentException, IOException {
         cache.remove(key);
-        try {
-            Files.deleteIfExists(getPath(key));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Files.deleteIfExists(getPath(key));
     }
 }
