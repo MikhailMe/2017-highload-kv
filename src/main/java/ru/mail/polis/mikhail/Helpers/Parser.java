@@ -15,7 +15,7 @@ public class Parser {
     private static final String EQUALS = "=";
     private final static String DELIMITER = "/";
     private static final String ENCODING = "UTF-8";
-    private static final String REPLICAS = "replicas=";
+    private static final String REPLICAS = "replicas";
     private static final String INVALID_QUERY = "Invalid query";
 
     private static final Map<String, Query> cache;

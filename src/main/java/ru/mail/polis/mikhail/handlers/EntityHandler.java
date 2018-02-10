@@ -11,16 +11,13 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class EntityHandler extends BaseHandler implements HttpMethods {
 
     private static final String ID = "?id=";
     private final static String PATH_INNER = "/v0/inner";
+    private final static String PATH_STATUS = "/v0/status";
     private static final String PATH = "http://localhost";
 
     private final int port;
@@ -42,9 +39,44 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
 
     @Override
     public void handle(HttpExchange http) throws IOException {
+
         try {
-            Response response;
             Query query = Parser.getQuery(http.getRequestURI().getQuery(), topology);
+            System.out.println(query.getAck());
+            Response response;
+
+            List<String> nodes = getNodesById(query.getId(), query.getFrom());
+            int counterActiveNodes = 0;
+            String thisNode = PATH + ":" + port;
+            System.out.println(thisNode);
+            for (String node : nodes) {
+                try {
+                    if (node.equals(thisNode)) {
+                        counterActiveNodes++;
+                    } else {
+                        URL url = new URL(node + PATH_STATUS);
+                        System.out.println(url);
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setRequestMethod(http.getRequestMethod());
+                        connection.connect();
+                        if (connection.getResponseCode() == Code.CODE_OK.getCode()) {
+                            counterActiveNodes++;
+                        }
+
+                    }
+                } catch (java.net.ConnectException e) {
+
+                } catch (IOException ex) {
+
+                    sendHttpResponse(http, new Response(Code.CODE_SERVER_ERROR.getCode()));
+                }
+            }
+
+            if (counterActiveNodes < query.getAck()) {
+                sendHttpResponse(http, new Response(Code.CODE_NOT_ENOUGH_REPLICAS.getCode()));
+                return;
+            }
+
             switch (http.getRequestMethod()) {
                 case GET_REQUEST:
                     response = get(query);
@@ -69,8 +101,7 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
 
     @NotNull
     @Override
-    public Response get(@NotNull Query query)
-            throws IOException {
+    public Response get(@NotNull Query query) {
         try {
             String id = query.getId();
             List<String> nodes = getNodesById(id, query.getFrom());
@@ -79,17 +110,12 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
             int amountNF = 0;
             byte[] value = null;
             for (int i = 0; i < query.getFrom(); i++) {
-                try {
-                    Response response = completionService.take().get();
-                    if (response.getCode() == Code.CODE_OK.getCode()) {
-                        amountOK++;
-                        value = response.getValue();
-                    } else if (response.getCode() == Code.CODE_NOT_FOUND.getCode()) {
-                        amountNF++;
-                    }
-                } catch (Exception e) {
-                    code = Code.CODE_SERVER_ERROR.getCode();
-                    return new Response(code);
+                Response response = completionService.take().get();
+                if (response.getCode() == Code.CODE_OK.getCode()) {
+                    amountOK++;
+                    value = response.getValue();
+                } else if (response.getCode() == Code.CODE_NOT_FOUND.getCode()) {
+                    amountNF++;
                 }
             }
             boolean hasHere = instanceOfIH.get(query).getCode() == Code.CODE_OK.getCode();
@@ -97,23 +123,20 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
                 instanceOfIH.put(query, value);
                 amountNF--;
                 amountOK++;
+            } else if (amountOK == 0) {
+                return new Response(Code.CODE_NOT_FOUND.getCode(), Message.MES_NOT_FOUND.toString());
             }
-            if (amountOK + amountNF < query.getAck()) {
-                code = Code.CODE_NOT_ENOUGH_REPLICAS.getCode();
-                return new Response(code);
-            } else if (amountOK < query.getAck()) {
-                code = Code.CODE_NOT_FOUND.getCode();
-                return new Response(code);
+            if (amountOK >= query.getAck()) {
+                return new Response(Code.CODE_OK.getCode(), value);
             } else {
-                code = Code.CODE_OK.getCode();
-                return new Response(code, value);
+                if (amountOK == 1) {
+                    return new Response(Code.CODE_NOT_FOUND.getCode(), Message.MES_NOT_FOUND.toString());
+                } else {
+                    return new Response(Code.CODE_NOT_ENOUGH_REPLICAS.getCode(), Message.MES_NOT_ENOUGH_REPLICAS.toString());
+                }
             }
-        } catch (IllegalArgumentException e) {
-            code = Code.CODE_BAD_REQUEST.getCode();
-            return new Response(code, e.getMessage());
-        } catch (NoSuchElementException e) {
-            code = Code.CODE_NOT_FOUND.getCode();
-            return new Response(code, e.getMessage());
+        } catch (InterruptedException | ExecutionException e) {
+            return new Response(Code.CODE_SERVER_ERROR.getCode(), Message.MES_SERVER_ERROR.toString());
         }
     }
 
@@ -121,34 +144,24 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
     @Override
     public Response put(@NotNull Query query,
                         @NotNull byte[] value) {
+        List<String> nodes = getNodesById(query.getId(), query.getFrom());
+
+        doTasks(PUT_REQUEST, query, nodes, value);
         try {
-            List<String> nodes = getNodesById(query.getId(), query.getFrom());
-            doTasks(PUT_REQUEST, query, nodes, value);
             int success = 0;
-            for (int i = 0; i < query.getFrom() && success < query.getAck(); i++) {
-                try {
-                    Response response = completionService.take().get();
-                    if (response.getCode() == Code.CODE_CREATED.getCode()) {
-                        success++;
-                    }
-                } catch (Exception e) {
-                    code = Code.CODE_SERVER_ERROR.getCode();
-                    return new Response(code);
+            for (int i = 0; i < query.getFrom(); i++) {
+                Response response = completionService.take().get();
+                if (response.getCode() == Code.CODE_CREATED.getCode()) {
+                    success++;
                 }
             }
-            if (success < query.getAck()) {
-                code = Code.CODE_NOT_ENOUGH_REPLICAS.getCode();
-                return new Response(code);
+            if (success >= query.getAck()) {
+                return new Response(Code.CODE_CREATED.getCode(), Message.MES_CREATED.toString());
             } else {
-                code = Code.CODE_CREATED.getCode();
-                return new Response(code);
+                return new Response(Code.CODE_NOT_ENOUGH_REPLICAS.getCode(), Message.MES_NOT_ENOUGH_REPLICAS.toString());
             }
-        } catch (IllegalArgumentException e) {
-            code = Code.CODE_BAD_REQUEST.getCode();
-            return new Response(code, e.getMessage());
-        } catch (NoSuchElementException e) {
-            code = Code.CODE_NOT_FOUND.getCode();
-            return new Response(code, e.getMessage());
+        } catch (InterruptedException | ExecutionException e) {
+            return new Response(Code.CODE_SERVER_ERROR.getCode(), Message.MES_SERVER_ERROR.toString());
         }
     }
 
@@ -160,29 +173,19 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
             doTasks(DELETE_REQUEST, query, nodes, null);
             int success = 0;
             for (int i = 0; i < query.getFrom() && success < query.getAck(); i++) {
-                try {
-                    Response response = completionService.take().get();
-                    if (response.getCode() == Code.CODE_ACCEPTED.getCode()) {
-                        success++;
-                    }
-                } catch (Exception e) {
-                    code = Code.CODE_SERVER_ERROR.getCode();
-                    return new Response(code);
+                Thread.sleep(500);
+                Response response = completionService.take().get();
+                if (response.getCode() == Code.CODE_ACCEPTED.getCode()) {
+                    success++;
                 }
             }
             if (success < query.getAck()) {
-                code = Code.CODE_NOT_ENOUGH_REPLICAS.getCode();
-                return new Response(code);
+                return new Response(Code.CODE_NOT_ENOUGH_REPLICAS.getCode(), Message.MES_NOT_ENOUGH_REPLICAS.toString());
             } else {
-                code = Code.CODE_ACCEPTED.getCode();
-                return new Response(code);
+                return new Response(Code.CODE_ACCEPTED.getCode(), Message.MES_ACCEPTED.toString());
             }
-        } catch (IllegalArgumentException e) {
-            code = Code.CODE_BAD_REQUEST.getCode();
-            return new Response(code, e.getMessage());
-        } catch (NoSuchElementException e) {
-            code = Code.CODE_NOT_FOUND.getCode();
-            return new Response(code, e.getMessage());
+        } catch (InterruptedException | ExecutionException e) {
+            return new Response(Code.CODE_SERVER_ERROR.getCode(), Message.MES_SERVER_ERROR.toString());
         }
     }
 

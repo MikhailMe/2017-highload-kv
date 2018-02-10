@@ -1,6 +1,3 @@
-import jdk.tools.jlink.resources.plugins
-import java.util.regex.Pattern.compile
-
 // See https://gradle.org and https://github.com/gradle/kotlin-dsl
 
 // Apply the java plugin to add support for Java
@@ -25,7 +22,6 @@ dependencies {
 
     // Guava for tests
     testCompile("com.google.guava:guava:23.1-jre")
-
 
 }
 

@@ -8,7 +8,6 @@ import ru.mail.polis.mikhail.Helpers.Response;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class BaseHandler implements HttpHandler {
@@ -52,18 +51,18 @@ public class BaseHandler implements HttpHandler {
 
     byte[] getByteArray(@NotNull InputStream is) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[1024];
-            for (int len; (len = is.read(buffer, 0, 1024)) != -1; ) {
+            int BUFFER_SIZE = 1024;
+            byte[] buffer = new byte[BUFFER_SIZE];
+            for (int len; (len = is.read(buffer, 0, BUFFER_SIZE)) != -1; ) {
                 baos.write(buffer, 0, len);
             }
             baos.flush();
-            System.out.println(baos.size());
             return baos.toByteArray();
         }
     }
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-
+        // nothing to do
     }
 }

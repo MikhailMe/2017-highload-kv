@@ -19,6 +19,5 @@ public class StatusHandler extends BaseHandler {
     @Override
     public void handle(HttpExchange http) throws IOException {
         sendHttpResponse(http, new Response(Code.CODE_OK.getCode(), Message.MES_OK.toString()));
-        //sendHttpResponse(http, Code.CODE_OK.getCode(), Message.MES_OK.toString());
     }
 }
