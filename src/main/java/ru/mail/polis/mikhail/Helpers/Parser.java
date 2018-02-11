@@ -47,7 +47,7 @@ public class Parser {
         return query;
     }
 
-    private static Map<String, String> getParams(@NotNull String query) {
+    public static Map<String, String> getParams(@NotNull String query) {
         try {
             Map<String, String> params = new HashMap<>();
             for (String param : query.split(AND)) {
