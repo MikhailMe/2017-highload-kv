@@ -20,9 +20,9 @@ public class MikhailService implements KVService {
     @NotNull
     private final HttpServer server;
 
-    private final static String PATH_INNER = "/v0/inner";
-    private final static String PATH_STATUS = "/v0/status";
-    private final static String PATH_ENTITY = "/v0/entity";
+    private static final String PATH_INNER = "/v0/inner";
+    private static final String PATH_STATUS = "/v0/status";
+    private static final String PATH_ENTITY = "/v0/entity";
 
     public MikhailService(final int port,
                           @NotNull final File data,

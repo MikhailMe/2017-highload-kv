@@ -13,7 +13,7 @@ public class Parser {
     private static final String ID = "id";
     private static final String AND = "&";
     private static final String EQUALS = "=";
-    private final static String DELIMITER = "/";
+    private static final String DELIMITER = "/";
     private static final String ENCODING = "UTF-8";
     private static final String REPLICAS = "replicas";
     private static final String INVALID_QUERY = "Invalid query";

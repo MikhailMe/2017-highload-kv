@@ -1,6 +1,5 @@
 package ru.mail.polis.mikhail.handlers;
 
-import com.google.common.io.ByteStreams;
 import com.sun.net.httpserver.HttpExchange;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -8,17 +7,13 @@ import ru.mail.polis.mikhail.Helpers.*;
 import ru.mail.polis.mikhail.DAO.MyDAO;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.*;
 
 public class EntityHandler extends BaseHandler implements HttpMethods {
-
-    private static final String ID = "?id=";
-    private final static String PATH_INNER = "/v0/inner";
-    private final static String PATH_STATUS = "/v0/status";
-    private static final String PATH = "http://localhost";
 
     private final int port;
     @NotNull
@@ -39,59 +34,37 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
 
     @Override
     public void handle(HttpExchange http) throws IOException {
-
         try {
             Query query = Parser.getQuery(http.getRequestURI().getQuery(), topology);
-            System.out.println(query.getAck());
             Response response;
-
-            List<String> nodes = getNodesById(query.getId(), query.getFrom());
             int counterActiveNodes = 0;
-            String thisNode = PATH + ":" + port;
-            System.out.println(thisNode);
+            String thisNode = PATH + port;
+            List<String> nodes = getNodesById(query.getId(), query.getFrom());
             for (String node : nodes) {
                 try {
                     if (node.equals(thisNode)) {
                         counterActiveNodes++;
                     } else {
                         URL url = new URL(node + PATH_STATUS);
-                        System.out.println(url);
                         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                         connection.setRequestMethod(http.getRequestMethod());
                         connection.connect();
                         if (connection.getResponseCode() == Code.CODE_OK.getCode()) {
                             counterActiveNodes++;
                         }
-
+                        connection.disconnect();
                     }
-                } catch (java.net.ConnectException e) {
-
+                } catch (ConnectException e) {
+                    // nothing to do
                 } catch (IOException ex) {
-
                     sendHttpResponse(http, new Response(Code.CODE_SERVER_ERROR.getCode()));
                 }
             }
-
             if (counterActiveNodes < query.getAck()) {
                 sendHttpResponse(http, new Response(Code.CODE_NOT_ENOUGH_REPLICAS.getCode()));
                 return;
             }
-
-            switch (http.getRequestMethod()) {
-                case GET_REQUEST:
-                    response = get(query);
-                    break;
-                case PUT_REQUEST:
-                    final byte[] value = ByteStreams.toByteArray(http.getRequestBody());
-                    response = put(query, value);
-                    break;
-                case DELETE_REQUEST:
-                    response = delete(query);
-                    break;
-                default:
-                    response = new Response(Code.CODE_NOT_ALLOWED.getCode(), Message.MES_NOT_ALLOWED.toString());
-                    break;
-            }
+            response = choiceMethod(http, query, this::get, this::put, this::delete);
             sendHttpResponse(http, response);
             http.close();
         } catch (IllegalArgumentException e) {
@@ -145,7 +118,6 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
     public Response put(@NotNull Query query,
                         @NotNull byte[] value) {
         List<String> nodes = getNodesById(query.getId(), query.getFrom());
-
         doTasks(PUT_REQUEST, query, nodes, value);
         try {
             int success = 0;
@@ -173,7 +145,6 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
             doTasks(DELETE_REQUEST, query, nodes, null);
             int success = 0;
             for (int i = 0; i < query.getFrom() && success < query.getAck(); i++) {
-                Thread.sleep(500);
                 Response response = completionService.take().get();
                 if (response.getCode() == Code.CODE_ACCEPTED.getCode()) {
                     success++;
@@ -193,7 +164,7 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
                          @NotNull Query query,
                          @NotNull List<String> nodes,
                          @Nullable byte[] value) {
-        String address = PATH + ":" + port;
+        String address = PATH + port;
         for (String node : nodes) {
             if (node.equals(address)) {
                 switch (method) {

@@ -4,20 +4,30 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import org.jetbrains.annotations.NotNull;
 import ru.mail.polis.mikhail.DAO.MyDAO;
+import ru.mail.polis.mikhail.Helpers.Code;
+import ru.mail.polis.mikhail.Helpers.Message;
+import ru.mail.polis.mikhail.Helpers.Query;
 import ru.mail.polis.mikhail.Helpers.Response;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 public class BaseHandler implements HttpHandler {
 
-    final static String GET_REQUEST = "GET";
-    final static String PUT_REQUEST = "PUT";
-    final static String DELETE_REQUEST = "DELETE";
+    static final String GET_REQUEST = "GET";
+    static final String PUT_REQUEST = "PUT";
+    static final String DELETE_REQUEST = "DELETE";
 
-    int code;
+    static final String ID = "?id=";
+    static final String PATH_INNER = "/v0/inner";
+    static final String PATH_STATUS = "/v0/status";
+    static final String PATH = "http://localhost:";
+
+    @NotNull
     final MyDAO dao;
+    @NotNull
     final List<String> topology;
 
     BaseHandler(@NotNull final MyDAO dao, @NotNull final List<String> topology) {
@@ -49,6 +59,7 @@ public class BaseHandler implements HttpHandler {
         return nodes;
     }
 
+    @NotNull
     byte[] getByteArray(@NotNull InputStream is) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             int BUFFER_SIZE = 1024;
@@ -59,6 +70,30 @@ public class BaseHandler implements HttpHandler {
             baos.flush();
             return baos.toByteArray();
         }
+    }
+
+    @NotNull
+    Response choiceMethod(@NotNull final HttpExchange http,
+                          @NotNull final Query query,
+                          @NotNull final Function<Query, Response> get,
+                          @NotNull final MyFunction<Query, byte[], Response> put,
+                          @NotNull final Function<Query, Response> delete) throws IOException {
+        switch (http.getRequestMethod()) {
+            case GET_REQUEST:
+                return get.apply(query);
+            case PUT_REQUEST:
+                final byte[] value = getByteArray(http.getRequestBody());
+                return put.apply(query, value);
+            case DELETE_REQUEST:
+                return delete.apply(query);
+            default:
+                return new Response(Code.CODE_NOT_ALLOWED.getCode(), Message.MES_NOT_ALLOWED.toString());
+        }
+    }
+
+    @FunctionalInterface
+    interface MyFunction<FirstParam, SecondParam, ReturnType> {
+        ReturnType apply(FirstParam param1, SecondParam param2);
     }
 
     @Override

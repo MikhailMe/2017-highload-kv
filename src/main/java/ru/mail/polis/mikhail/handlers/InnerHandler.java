@@ -1,6 +1,5 @@
 package ru.mail.polis.mikhail.handlers;
 
-import com.google.common.io.ByteStreams;
 import com.sun.net.httpserver.HttpExchange;
 import org.jetbrains.annotations.NotNull;
 import ru.mail.polis.mikhail.Helpers.*;
@@ -19,23 +18,8 @@ public class InnerHandler extends BaseHandler implements HttpMethods {
     @Override
     public void handle(HttpExchange http) throws IOException {
         try {
-            Response response;
             Query query = Parser.getQuery(http.getRequestURI().getQuery(), topology);
-            switch (http.getRequestMethod()) {
-                case GET_REQUEST:
-                    response = get(query);
-                    break;
-                case PUT_REQUEST:
-                    final byte[] value = ByteStreams.toByteArray(http.getRequestBody());//getByteArray(http.getRequestBody());
-                    response = put(query, value);
-                    break;
-                case DELETE_REQUEST:
-                    response = delete(query);
-                    break;
-                default:
-                    response = new Response(Code.CODE_NOT_ALLOWED.getCode(), Message.MES_NOT_ALLOWED.toString());
-                    break;
-            }
+            Response response = choiceMethod(http, query, this::get, this::put, this::delete);
             sendHttpResponse(http, response);
             http.close();
         } catch (IllegalArgumentException e) {
