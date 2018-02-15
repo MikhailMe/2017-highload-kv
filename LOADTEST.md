@@ -178,6 +178,8 @@ Running 2m test @ http://localhost:8080
 Requests/sec:     74.97
 Transfer/sec:     80.68KB
 ```
+[23get44.jpg](https://github.com/MikhailMe/2017-highload-kv/blob/master/23get44.jpg)
+
 ### GET без перезаписи с replicas=3/3 2 потока, 4 соединения:
 ```
 [mikhail@localhost wrk]$ ./wrk --latency -c4 -t2 -d2m -s /home/mikhail/Documents/Soft/wrk/scripts/get-33.lua http://localhost:8080
@@ -212,6 +214,9 @@ Running 2m test @ http://localhost:8080
 Requests/sec:     72.83
 Transfer/sec:     78.38KB
 ```
+[33get33.jpg](https://github.com/MikhailMe/2017-highload-kv/blob/master/33get33.jpg)
+
+
 ### GET с перезаписью с replicas=2/3 2 потока, 4 соединения:
 ```
 [mikhail@localhost wrk]$ ./wrk --latency -c4 -t2 -d2m -s /home/mikhail/Documents/Soft/wrk/scripts/get-rep-23.lua http://localhost:8080
@@ -280,3 +285,4 @@ Running 2m test @ http://localhost:8080
 Requests/sec:     73.78
 Transfer/sec:     79.40KB
 ```
+[33get44.jpg](https://github.com/MikhailMe/2017-highload-kv/blob/master/33get44.jpg)
