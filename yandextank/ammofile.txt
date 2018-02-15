@@ -1,0 +1,8 @@
+171 put
+PUT /v0/entity?id=zxvw142&replicas=2/3 HTTP/1.1
+Host: hostname.com
+User-Agent: tank
+Accept: */*
+Connection: Close
+Content-Length: 36
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
