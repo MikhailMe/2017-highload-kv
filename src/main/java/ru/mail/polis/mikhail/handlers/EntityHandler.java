@@ -28,7 +28,7 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
         super(dao, topology);
         this.port = port;
         this.instanceOfIH = innerHandler;
-        Executor executor = Executors.newFixedThreadPool(topology.size());
+        Executor executor = Executors.newFixedThreadPool(8);
         this.completionService = new ExecutorCompletionService<>(executor);
     }
 
