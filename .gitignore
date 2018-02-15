@@ -12,7 +12,8 @@
 !LICENSE
 !README.md
 !settings.gradle
-!jpg
+
+!*.jpg
 
 # ...even if they are in subdirectories
 !*/
