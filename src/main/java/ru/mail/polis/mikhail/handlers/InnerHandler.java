@@ -6,13 +6,19 @@ import ru.mail.polis.mikhail.Helpers.*;
 import ru.mail.polis.mikhail.DAO.MyDAO;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 public class InnerHandler extends BaseHandler implements HttpMethods {
 
+    @NotNull
+    private Map<String, byte[]> cache;
+
     public InnerHandler(@NotNull MyDAO dao, @NotNull List<String> topology) {
         super(dao, topology);
+        this.cache = new LinkedHashMap<>();
     }
 
     @Override
@@ -32,8 +38,13 @@ public class InnerHandler extends BaseHandler implements HttpMethods {
     public Response get(@NotNull Query query) {
         try {
             String id = query.getId();
-            final byte[] getValue = dao.get(id);
-            return new Response(Code.CODE_OK.getCode(), getValue);
+            byte[] value;
+            if (null != (value = cache.get(id))) {
+            } else {
+                value = dao.get(id);
+                cache.put(id, value);
+            }
+            return new Response(Code.CODE_OK.getCode(), value);
         } catch (IOException e) {
             return new Response(Code.CODE_SERVER_ERROR.getCode(), Message.MES_SERVER_ERROR.toString());
         } catch (NoSuchElementException e) {
@@ -47,6 +58,7 @@ public class InnerHandler extends BaseHandler implements HttpMethods {
                         @NotNull byte[] value) {
         try {
             String id = query.getId();
+            cache.put(id, value);
             dao.upsert(id, value);
             return new Response(Code.CODE_CREATED.getCode(), Message.MES_CREATED.toString());
         } catch (IOException | IllegalArgumentException e) {
@@ -59,6 +71,7 @@ public class InnerHandler extends BaseHandler implements HttpMethods {
     public Response delete(@NotNull Query query) {
         try {
             String id = query.getId();
+            cache.remove(id);
             dao.delete(id);
             return new Response(Code.CODE_ACCEPTED.getCode(), Message.MES_ACCEPTED.toString());
         } catch (IOException e) {

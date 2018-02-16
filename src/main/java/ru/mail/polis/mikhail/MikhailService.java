@@ -32,7 +32,7 @@ public class MikhailService implements KVService {
         MyDAO dao = new MyFileDAO(data);
         InnerHandler innerHandler = new InnerHandler(dao, new ArrayList<>(topology));
         this.server = HttpServer.create(new InetSocketAddress(port), 0);
-        //this.server.setExecutor(Executors.newFixedThreadPool(8));
+        this.server.setExecutor(Executors.newFixedThreadPool(8));
         this.server.createContext(PATH_INNER, innerHandler);
         this.server.createContext(PATH_STATUS, new StatusHandler(dao, new ArrayList<>(topology)));
         this.server.createContext(PATH_ENTITY, new EntityHandler(port, dao, new ArrayList<>(topology), innerHandler));
