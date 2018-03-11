@@ -6,9 +6,9 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MyFileDAO implements MyDAO {
 
@@ -19,7 +19,7 @@ public class MyFileDAO implements MyDAO {
 
     public MyFileDAO(@NotNull final File directory) {
         this.directory = directory;
-        cache = new HashMap<>();
+        this.cache = new ConcurrentHashMap<>();
     }
 
     @NotNull

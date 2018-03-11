@@ -7,9 +7,7 @@ import ru.mail.polis.mikhail.Helpers.*;
 import ru.mail.polis.mikhail.DAO.MyDAO;
 
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.*;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -182,6 +180,7 @@ public class EntityHandler extends BaseHandler implements HttpMethods {
             } else {
                 String path = node + PATH_INNER;
                 String id = ID + query.getId();
+                makeRequest(method, path, id, value);
                 completionService.submit(() -> makeRequest(method, path, id, value));
             }
         }

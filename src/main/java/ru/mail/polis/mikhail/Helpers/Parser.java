@@ -7,6 +7,8 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Parser {
 
@@ -21,7 +23,7 @@ public class Parser {
     private static final Map<String, Query> cache;
 
     static {
-        cache = new HashMap<>();
+        cache = new ConcurrentHashMap<>();
     }
 
     public static Query getQuery(@NotNull String key, @NotNull List<String> topology) {
@@ -30,19 +32,20 @@ public class Parser {
         }
         Map<String, String> params = getParams(key);
         String id = params.get(ID);
-        int ack, from;
+        AtomicInteger ack = new AtomicInteger();
+        AtomicInteger from = new AtomicInteger();
         if (params.containsKey(REPLICAS)) {
             String rp[] = params.get(REPLICAS).split(DELIMITER);
-            ack = Integer.valueOf(rp[0]);
-            from = Integer.valueOf(rp[1]);
+            ack.set(Integer.valueOf(rp[0]));
+            from.set(Integer.valueOf(rp[1]));
         } else {
-            ack = topology.size() / 2 + 1;
-            from = topology.size();
+            ack.set(topology.size() / 2 + 1);
+            from.set(topology.size());
         }
-        if (id == null || "".equals(id) || ack < 1 || from < 1 || ack > from) {
+        if (id == null || "".equals(id) || ack.get()< 1 || from.get() < 1 || ack.get() > from.get()) {
             throw new IllegalArgumentException(INVALID_QUERY);
         }
-        Query query  = new Query(id, ack, from);
+        Query query  = new Query(id, ack.get(), from.get());
         cache.put(id, query);
         return query;
     }

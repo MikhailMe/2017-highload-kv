@@ -12,6 +12,9 @@ import ru.mail.polis.mikhail.Helpers.Response;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class BaseHandler implements HttpHandler {
@@ -29,20 +32,23 @@ public class BaseHandler implements HttpHandler {
     final MyDAO dao;
     @NotNull
     final List<String> topology;
+    @NotNull
+    private Map<String, List<String>> cache;
 
     BaseHandler(@NotNull final MyDAO dao, @NotNull final List<String> topology) {
         this.dao = dao;
         this.topology = topology;
+        this.cache = new ConcurrentHashMap<>();
     }
 
     void sendHttpResponse(@NotNull HttpExchange http, Response response) throws IOException {
-        int code = response.getCode();
+        AtomicInteger code = new AtomicInteger(response.getCode());
         byte[] value = response.getValue();
         if (response.hasValue()) {
-            http.sendResponseHeaders(code, value.length);
+            http.sendResponseHeaders(code.get(), value.length);
             http.getResponseBody().write(response.getValue());
         } else {
-            http.sendResponseHeaders(code, 0);
+            http.sendResponseHeaders(code.get(), 0);
         }
         http.getResponseBody().close();
         http.close();
@@ -50,17 +56,21 @@ public class BaseHandler implements HttpHandler {
 
     @NotNull
     List<String> getNodesById(@NotNull final String id, int from) {
+        if (cache.containsKey(id + from)) {
+            return cache.get(topology + id + from);
+        }
         List<String> nodes = new ArrayList<>();
         int hash = Math.abs(id.hashCode());
         for (int i = 0; i < from; i++) {
             int index = (hash + i) % topology.size();
             nodes.add(topology.get(index));
         }
+        cache.put(topology + id + from, nodes);
         return nodes;
     }
 
     @NotNull
-    byte[] getByteArray(@NotNull InputStream is) throws IOException {
+    byte[] getByteArray(@NotNull final InputStream is) throws IOException {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             int BUFFER_SIZE = 1024;
             byte[] buffer = new byte[BUFFER_SIZE];
